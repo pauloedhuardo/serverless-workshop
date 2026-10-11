@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Parameters:
+  TagEnvironment:
+    Type: String
+  TagProject:
+    Type: String
+  LambdaAuthorizerFunctionArn:
+    Type: String
+Resources:
+  StockBasePathMapping:
+    Type: AWS::ApiGateway::BasePathMapping
+    Properties:
+      BasePath: stocks
+      DomainName: backend.s2sinovatec.com
+      RestApiId: !Ref ApiGatewayApi
+      Stage: !Ref ApiGatewayApi.Stage
+
+  ApiGatewayApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      Name: !Sub serverless-s2s-api-stock-${TagEnvironment}
+      Auth:
+        DefaultAuthorizer: LambdaAuthorizer
+        Authorizers:
+          LambdaAuthorizer:
+            FunctionArn: !Ref LambdaAuthorizerFunctionArn
+            Identity:
+              Headers:
+              - Authorization
+      Tags:
+        Environment: !Ref TagEnvironment
+        Project: !Ref TagProject
+
+  DynamoTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      PrimaryKey:
+        Name: Id
+        Type: String
+      TableName: !Sub serverless-s2s-stock-table-${TagEnvironment}
+      Tags:
+        Environment: !Ref TagEnvironment
+        Project: !Ref TagProject
+
+  LambdaStockFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub serverless-s2s-lambda-stock-${TagEnvironment}
+      Runtime: dotnet8
+      Timeout: 30
+      Handler: StockApi
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - AmazonDynamoDBFullAccess      
+      Environment:
+        Variables:
+          DYNAMO_TABLE_NAME: !Ref DynamoTable
+      Events:
+        RootPath:
+          Type: Api
+          Properties:
+            Path: /
+            Method: ANY
+            RestApiId:
+              Ref: ApiGatewayApi
+        AnythingElsePath:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+            RestApiId:
+              Ref: ApiGatewayApi
+      Tags:
+        Environment: !Ref TagEnvironment
+        Project: !Ref TagProject

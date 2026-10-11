@@ -1,0 +1,12 @@
+version = 0.1
+
+[default.deploy.parameters]
+stack_name = "infraestructure-app"
+resolve_s3 = true
+s3_prefix = "infraestructure-app"
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "TagEnvironment=\"production\" TagProject=\"serverless-s2s\" CertificateArn=\"arn:aws:acm:us-east-1:495624154773:certificate/a89ba5c8-bb33-44df-ae36-1a69033455e6\" HostedZoneId=\"Z06878552DMAOTMD0CGNI\""
+image_repositories = []
+
+[default.global.parameters]
+region = "us-east-1"

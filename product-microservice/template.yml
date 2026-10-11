@@ -1,0 +1,83 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Parameters:
+  TagEnvironment:
+    Type: String
+    Default: production
+  TagProject:
+    Type: String
+    Default: serverless-s2s
+  LambdaAuthorizerFunctionArn:
+    Type: String
+Resources:
+  ProductBasePathMapping:
+    Type: AWS::ApiGateway::BasePathMapping
+    Properties:
+      BasePath: products
+      DomainName: backend.s2sinovatec.com
+      RestApiId: !Ref ApiGatewayApi
+      Stage: !Ref ApiGatewayApi.Stage
+
+  DynamoDBTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      PrimaryKey:
+        Name: Id
+        Type: String
+      TableName: !Sub serverless-s2s-product-table-${TagEnvironment}
+      Tags:
+        Environment: !Ref TagEnvironment
+        Project: !Ref TagProject
+
+  ApiGatewayApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      Name: !Sub serverless-s2s-api-product-${TagEnvironment}
+      Auth:
+        DefaultAuthorizer: LambdaAuthorizer
+        Authorizers:
+          LambdaAuthorizer:
+            FunctionArn: !Ref LambdaAuthorizerFunctionArn
+            Identity:
+              Headers:
+              - Authorization
+            Type: TOKEN
+      Tags:
+        Environment: !Ref TagEnvironment
+        Project: !Ref TagProject
+
+  
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub serverless-s2s-api-${TagEnvironment}
+      Runtime: nodejs22.x
+      Handler: handler.main
+      Timeout: 30
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - AmazonDynamoDBFullAccess
+      Environment:
+        Variables:
+          DYNAMO_TABLE_NAME: !Ref DynamoDBTable
+      Events:
+        ProductRootPath:
+          Type: Api
+          Properties:
+            Path: /
+            Method: ANY
+            RestApiId:
+              Ref: ApiGatewayApi
+        ProductAnythingElsePath:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+            RestApiId:
+              Ref: ApiGatewayApi
+      Tags:
+        Environment: !Ref TagEnvironment
+        Project: !Ref TagProject

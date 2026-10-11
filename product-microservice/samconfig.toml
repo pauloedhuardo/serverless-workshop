@@ -1,0 +1,11 @@
+version = 0.1
+[default.deploy.parameters]
+stack_name = "product-app"
+resolve_s3 = true
+s3_prefix = "product-app"
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "TagEnvironment=\"production\" TagProject=\"serverless-s2s\" LambdaAuthorizerFunctionArn=\"arn:aws:lambda:us-east-1:495624154773:function:serverless-s2s-lambda-authorizer-production\""
+image_repositories = []
+
+[default.global.parameters]
+region = "us-east-1"

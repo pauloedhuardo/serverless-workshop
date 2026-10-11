@@ -1,0 +1,85 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Parameters:
+  TagEnvironment:
+    Type: String
+    Default: production
+  TagProject:
+    Type: String
+    Default: serverless-s2s
+  CertificateArn:
+    Type: String
+  HostedZoneId:
+    Type: String
+Resources:
+
+  JwtLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: jwt-layer
+      ContentUri: layer/
+      CompatibleRuntimes:
+        - python3.12
+
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub serverless-s2s-lambda-authorizer-${TagEnvironment}
+      Runtime: python3.12
+      Handler: authorizer.lambda_handler
+      Policies:
+        - AWSLambdaBasicExecutionRole
+      Timeout: 30
+      Layers:
+        - !Ref JwtLayer
+      Environment:
+        Variables:
+          COGNITO_USER_POOL_ID: !Ref CognitoUserPool
+          COGNITO_REGION: !Ref AWS::Region
+      Tags:
+        Environment: !Ref TagEnvironment
+        Project: !Ref TagProject
+
+  CognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub serverless-s2s-user-pool-${TagEnvironment}
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+      UsernameAttributes:
+        - email
+      Schema:
+        - AttributeDataType: String
+          Name: email
+          Required: false
+  
+  CognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref CognitoUserPool
+      ClientName: !Sub serverless-s2s-user-pool-client-${TagEnvironment}
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+
+  CustomDomainName:
+    Type: AWS::ApiGateway::DomainName
+    Properties:
+      CertificateArn: !Ref CertificateArn
+      DomainName: !Sub backend-${TagEnvironment}.s2sinovatec.com
+      EndpointConfiguration: 
+        Types: 
+          - EDGE
+      SecurityPolicy: TLS_1_2
+
+  Route53RecordSet:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      AliasTarget: 
+        DNSName: !GetAtt CustomDomainName.DistributionDomainName
+        HostedZoneId: !GetAtt CustomDomainName.DistributionHostedZoneId
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Sub backend-${TagEnvironment}.s2sinovatec.com
+      Type: A
