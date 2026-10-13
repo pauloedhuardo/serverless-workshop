@@ -53,7 +53,7 @@ jobs:
             --region ${{vars.DEVELOPMENT_REGION}} \
             --s3-bucket ${{vars.DEVELOPMENT_ARTIFACTS_BUCKET}} \
             --no-fail-on-empty-changeset \
-            --role-arn ${{vars.DEVELOPMENT_CLOUDFORMATION_EXECUTION_ROLE}}
+            --role-arn ${{vars.DEVELOPMENT_CLOUDFORMATION_EXECUTION_ROLE}} \
             --parameter-overrides \
               TagEnvironment=development \
               CertificateArn=${{vars.DEVELOPMENT_CERTIFICATE_ARN}} \
@@ -98,7 +98,7 @@ jobs:
             --region ${{vars.PRODUCTION_REGION}} \
             --s3-bucket ${{vars.PRODUCTION_ARTIFACTS_BUCKET}} \
             --no-fail-on-empty-changeset \
-            --role-arn ${{vars.PRODUCTION_CLOUDFORMATION_EXECUTION_ROLE}}
+            --role-arn ${{vars.PRODUCTION_CLOUDFORMATION_EXECUTION_ROLE}} \
             --parameter-overrides \
               TagEnvironment=production \
               CertificateArn=${{vars.PRODUCTION_CERTIFICATE_ARN}} \
