@@ -12,7 +12,7 @@ Resources:
     Type: AWS::ApiGateway::BasePathMapping
     Properties:
       BasePath: stocks
-      DomainName: backend.s2sinovatec.com
+      DomainName: !Sub backend-${TagEnvironment}.s2sinovatec.com
       RestApiId: !Ref ApiGatewayApi
       Stage: !Ref ApiGatewayApi.Stage
 
