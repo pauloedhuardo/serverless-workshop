@@ -3,8 +3,10 @@ Transform: AWS::Serverless-2016-10-31
 Parameters:
   TagEnvironment:
     Type: String
+    Default: production
   TagProject:
     Type: String
+    Default: serverless-s2s
   LambdaAuthorizerFunctionArn:
     Type: String
 Resources:
